@@ -2,10 +2,15 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { loginSchema, type LoginForm } from "@/lib/validations/auth.schema";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/authStore";
+import api from "@/lib/api";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuthStore();
   const {
     register,
     handleSubmit,
@@ -16,10 +21,17 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      // TODO: Implement login API call
-      console.log("Login:", data);
-    } catch (error) {
+      const response = await api.post("/auth/login", data);
+      const { accessToken, refreshToken, user } = response.data;
+      
+      // Lưu tokens và user vào store
+      login(user, accessToken, refreshToken);
+      
+      // Redirect to dashboard
+      router.push("/workspace");
+    } catch (error: any) {
       console.error("Login error:", error);
+      alert(error.response?.data?.message || "Đăng nhập thất bại");
     }
   };
 

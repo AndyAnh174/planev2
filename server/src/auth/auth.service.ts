@@ -6,18 +6,35 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
+import Redis from "ioredis";
 import { User } from "../users/entities/user.entity";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 
 @Injectable()
 export class AuthService {
+  private redis: Redis;
+
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-    private jwtService: JwtService
-  ) {}
+    private jwtService: JwtService,
+    private configService: ConfigService
+  ) {
+    const redisConfig = this.configService.get("redis") || {};
+    const redisUrl = redisConfig.url || process.env.REDIS_URL;
+    
+    if (redisUrl) {
+      this.redis = new Redis(redisUrl);
+    } else {
+      this.redis = new Redis({
+        host: redisConfig.host || process.env.REDIS_HOST || "localhost",
+        port: redisConfig.port || parseInt(process.env.REDIS_PORT || "6379", 10),
+      });
+    }
+  }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({ where: { email } });
@@ -43,7 +60,9 @@ export class AuthService {
       expiresIn: refreshExpiration,
     });
 
-    // TODO: Store refresh token in Redis
+    // Store refresh token in Redis with TTL = 7 days
+    const ttlSeconds = 7 * 24 * 60 * 60; // 7 days in seconds
+    await this.redis.setex(`refresh:${user.id}`, ttlSeconds, refreshToken);
 
     return {
       accessToken,
@@ -93,6 +112,65 @@ export class AuthService {
       user = await this.usersRepository.save(user);
     }
     return user;
+  }
+
+  async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; user: any }> {
+    try {
+      // 1. Verify refresh token JWT
+      const payload = this.jwtService.verify(refreshToken);
+      const userId = payload.sub;
+
+      // 2. Check refresh token tồn tại trong Redis
+      const storedToken = await this.redis.get(`refresh:${userId}`);
+      if (!storedToken || storedToken !== refreshToken) {
+        throw new UnauthorizedException("Refresh token không hợp lệ hoặc đã hết hạn");
+      }
+
+      // 3. Get user from database
+      const user = await this.usersRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new UnauthorizedException("User không tồn tại");
+      }
+
+      // 4. Generate new access token và refresh token
+      const jwtExpiration = (process.env.JWT_EXPIRATION || "15m") as any;
+      const refreshExpiration = (process.env.REFRESH_TOKEN_EXPIRATION || "7d") as any;
+      
+      const newPayload = { sub: user.id, email: user.email };
+      const newAccessToken = this.jwtService.sign(newPayload, {
+        expiresIn: jwtExpiration,
+      });
+      const newRefreshToken = this.jwtService.sign(newPayload, {
+        expiresIn: refreshExpiration,
+      });
+
+      // 5. Token rotation: Xóa refresh token cũ, lưu refresh token mới vào Redis
+      await this.redis.del(`refresh:${userId}`);
+      const ttlSeconds = 7 * 24 * 60 * 60; // 7 days in seconds
+      await this.redis.setex(`refresh:${userId}`, ttlSeconds, newRefreshToken);
+
+      // 6. Return tokens mới
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          avatarUrl: user.avatarUrl,
+        },
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException("Refresh token không hợp lệ");
+    }
+  }
+
+  async logout(userId: string): Promise<void> {
+    // Invalidate refresh token trong Redis
+    await this.redis.del(`refresh:${userId}`);
   }
 }
 

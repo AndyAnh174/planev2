@@ -2,13 +2,18 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import {
   registerSchema,
   type RegisterForm,
 } from "@/lib/validations/auth.schema";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/authStore";
+import api from "@/lib/api";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { login } = useAuthStore();
   const {
     register,
     handleSubmit,
@@ -19,10 +24,18 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     try {
-      // TODO: Implement register API call
-      console.log("Register:", data);
-    } catch (error) {
+      const { confirmPassword, ...registerData } = data;
+      const response = await api.post("/auth/register", registerData);
+      const { accessToken, refreshToken, user } = response.data;
+      
+      // Lưu tokens và user vào store
+      login(user, accessToken, refreshToken);
+      
+      // Redirect to dashboard
+      router.push("/workspace");
+    } catch (error: any) {
       console.error("Register error:", error);
+      alert(error.response?.data?.message || "Đăng ký thất bại");
     }
   };
 

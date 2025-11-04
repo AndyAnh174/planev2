@@ -21,9 +21,12 @@ export function TipTapEditor({
 }: TipTapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable some features in read-only mode
+        history: !readOnly,
+      }),
       Placeholder.configure({
-        placeholder: "Bắt đầu viết... Nhấn / để xem các lệnh",
+        placeholder: readOnly ? "" : "Bắt đầu viết... Nhấn / để xem các lệnh",
       }),
       Link.configure({
         openOnClick: false,
@@ -40,7 +43,7 @@ export function TipTapEditor({
     content: initialContent,
     editable: !readOnly,
     onUpdate: ({ editor }) => {
-      if (onChange) {
+      if (onChange && !readOnly) {
         onChange(editor.getHTML());
       }
     },

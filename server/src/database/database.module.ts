@@ -19,9 +19,7 @@ import databaseConfig from "../config/database.config";
   ],
 })
 export class DatabaseModule {
-  constructor() {
-    // Enable pgvector extension on module init
-    // This should be done via migration in production
-  }
+  // pgvector extension is enabled via migrations
+  // See: src/database/migrations/1699123456790-EnablePgvector.ts
 }
 

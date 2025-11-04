@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { APP_INTERCEPTOR } from "@nestjs/core";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ConfigModule } from "./config/config.module";
@@ -14,6 +15,7 @@ import { FilesModule } from "./files/files.module";
 import { RealtimeModule } from "./realtime/realtime.module";
 import { SearchModule } from "./search/search.module";
 import { HealthModule } from "./health/health.module";
+import { RateLimitInterceptor } from "./common/interceptors/rate-limit.interceptor";
 
 @Module({
   imports: [
@@ -32,6 +34,12 @@ import { HealthModule } from "./health/health.module";
     HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RateLimitInterceptor,
+    },
+  ],
 })
 export class AppModule {}

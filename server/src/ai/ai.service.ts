@@ -17,7 +17,7 @@ export class AIService {
     this.provider = this.configService.get<string>("ai.provider") || "none";
   }
 
-  private getProviderService() {
+  private getProviderService(): OllamaService | GeminiService {
     if (this.provider === "ollama") {
       return this.ollamaService;
     } else if (this.provider === "gemini") {
@@ -26,24 +26,36 @@ export class AIService {
     throw new Error("AI provider not configured");
   }
 
-  async summarize(content: string): Promise<string> {
+  async summarize(content: string, userId?: string): Promise<string> {
     const prompt = `Tóm tắt nội dung sau bằng tiếng Việt:\n\n${content}`;
+    if (this.provider === "gemini" && userId) {
+      return this.geminiService.generate(prompt, userId);
+    }
     return this.getProviderService().generate(prompt);
   }
 
-  async brainstorm(topic: string): Promise<string> {
+  async brainstorm(topic: string, userId?: string): Promise<string> {
     const prompt = `Sinh ý tưởng và gợi ý cho chủ đề: ${topic}. Trả lời bằng tiếng Việt.`;
+    if (this.provider === "gemini" && userId) {
+      return this.geminiService.generate(prompt, userId);
+    }
     return this.getProviderService().generate(prompt);
   }
 
-  async translate(content: string, targetLanguage: string = "en"): Promise<string> {
+  async translate(content: string, targetLanguage: string = "en", userId?: string): Promise<string> {
     const prompt = `Dịch nội dung sau sang ${targetLanguage}:\n\n${content}`;
+    if (this.provider === "gemini" && userId) {
+      return this.geminiService.generate(prompt, userId);
+    }
     return this.getProviderService().generate(prompt);
   }
 
-  async ask(query: string, workspaceId: string): Promise<string> {
+  async ask(query: string, workspaceId: string, userId?: string): Promise<string> {
     const context = await this.ragService.search(query, workspaceId);
     const prompt = `Dựa vào ngữ cảnh sau, trả lời câu hỏi bằng tiếng Việt:\n\nNgữ cảnh:\n${context}\n\nCâu hỏi: ${query}`;
+    if (this.provider === "gemini" && userId) {
+      return this.geminiService.generate(prompt, userId);
+    }
     return this.getProviderService().generate(prompt);
   }
 }

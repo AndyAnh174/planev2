@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Query } from "@nestjs/common";
+import { Controller, Post, Body, UseGuards, Query, UseInterceptors } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import {
   ApiTags,
@@ -9,10 +9,13 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { AIService } from "./ai.service";
+import { AIRateLimitInterceptor } from "../common/interceptors/ai-rate-limit.interceptor";
+import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
 @ApiTags("ai")
 @ApiBearerAuth("JWT-auth")
 @Controller("ai")
+@UseInterceptors(AIRateLimitInterceptor)
 export class AIController {
   constructor(private aiService: AIService) {}
 
@@ -29,8 +32,12 @@ export class AIController {
     },
   })
   @ApiResponse({ status: 200, description: "Nội dung đã được tóm tắt" })
-  async summarize(@Body() body: { content: string }) {
-    return { result: await this.aiService.summarize(body.content) };
+  async summarize(
+    @Body() body: { content: string },
+    @CurrentUser() user: any
+  ) {
+    const userId = user?.userId || user?.sub;
+    return { result: await this.aiService.summarize(body.content, userId) };
   }
 
   @Post("brainstorm")
@@ -46,8 +53,12 @@ export class AIController {
     },
   })
   @ApiResponse({ status: 200, description: "Danh sách ý tưởng" })
-  async brainstorm(@Body() body: { topic: string }) {
-    return { result: await this.aiService.brainstorm(body.topic) };
+  async brainstorm(
+    @Body() body: { topic: string },
+    @CurrentUser() user: any
+  ) {
+    const userId = user?.userId || user?.sub;
+    return { result: await this.aiService.brainstorm(body.topic, userId) };
   }
 
   @Post("translate")
@@ -69,12 +80,15 @@ export class AIController {
   })
   @ApiResponse({ status: 200, description: "Nội dung đã được dịch" })
   async translate(
-    @Body() body: { content: string; targetLanguage?: string }
+    @Body() body: { content: string; targetLanguage?: string },
+    @CurrentUser() user: any
   ) {
+    const userId = user?.userId || user?.sub;
     return {
       result: await this.aiService.translate(
         body.content,
-        body.targetLanguage
+        body.targetLanguage,
+        userId
       ),
     };
   }
@@ -102,9 +116,11 @@ export class AIController {
   @ApiResponse({ status: 200, description: "Câu trả lời từ AI" })
   async ask(
     @Body() body: { query: string },
-    @Query("workspaceId") workspaceId: string
+    @Query("workspaceId") workspaceId: string,
+    @CurrentUser() user: any
   ) {
-    return { result: await this.aiService.ask(body.query, workspaceId) };
+    const userId = user?.userId || user?.sub;
+    return { result: await this.aiService.ask(body.query, workspaceId, userId) };
   }
 }
 

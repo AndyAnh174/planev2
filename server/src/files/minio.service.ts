@@ -59,5 +59,30 @@ export class MinIOService {
     const endpoint = this.configService.get<string>("minio.endpoint");
     return `${endpoint}/${this.bucket}/${fileName}`;
   }
+
+  async downloadFile(fileName: string): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+
+    return new Promise((resolve, reject) => {
+      this.client.getObject(this.bucket, fileName, (err, dataStream) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        dataStream.on("data", (chunk) => {
+          chunks.push(chunk);
+        });
+
+        dataStream.on("end", () => {
+          resolve(Buffer.concat(chunks));
+        });
+
+        dataStream.on("error", (error) => {
+          reject(error);
+        });
+      });
+    });
+  }
 }
 

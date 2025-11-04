@@ -65,10 +65,10 @@ export class AuthController {
     const user = req.user as any;
     const result = await this.authService.login(user);
     
-    // Redirect to frontend with token
+    // Redirect to frontend with both tokens
     const frontendUrl = process.env.APP_URL || "http://localhost:3000";
     res.redirect(
-      `${frontendUrl}/auth/callback?token=${result.accessToken}`
+      `${frontendUrl}/auth/callback?token=${result.accessToken}&refreshToken=${result.refreshToken}`
     );
   }
 
@@ -86,9 +86,24 @@ export class AuthController {
   @Public()
   @ApiOperation({ summary: "Refresh access token" })
   @ApiResponse({ status: 200, description: "Token đã được refresh" })
+  @ApiResponse({ status: 401, description: "Refresh token không hợp lệ hoặc đã hết hạn" })
   async refresh(@Body() body: { refreshToken: string }) {
-    // TODO: Implement refresh token logic
-    return { message: "Refresh token endpoint" };
+    if (!body.refreshToken) {
+      throw new UnauthorizedException("Refresh token là bắt buộc");
+    }
+    return this.authService.refresh(body.refreshToken);
+  }
+
+  @Post("logout")
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Đăng xuất và invalidate refresh token" })
+  @ApiResponse({ status: 200, description: "Đăng xuất thành công" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async logout(@CurrentUser() user: any) {
+    const userId = user.userId || user.sub;
+    await this.authService.logout(userId);
+    return { message: "Đăng xuất thành công" };
   }
 }
 

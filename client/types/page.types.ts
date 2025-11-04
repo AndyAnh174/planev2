@@ -11,6 +11,13 @@ export type BlockType =
   | "quote"
   | "divider";
 
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  avatarUrl?: string;
+}
+
 export interface Page {
   id: string;
   workspaceId: string;
@@ -18,7 +25,9 @@ export interface Page {
   slug: string;
   visibility: PageVisibility;
   authorId: string;
+  author?: User;
   isIndexed: boolean;
+  blocks?: Block[];
   createdAt: string;
   updatedAt: string;
 }
