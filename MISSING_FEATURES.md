@@ -154,12 +154,18 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 📊 Workspace Management
 
-### 17. Workspace Export (JSON/PDF)
-- **Status**: Chưa có
-- **Cần**: 
-  - Endpoint `/workspaces/:id/export?format=json|pdf`
-  - Export tất cả pages, boards, files trong workspace
-  - PDF generation service
+### 17. Workspace Export (JSON/PDF) ⚠️ **QUAN TRỌNG** ✅ **DONE**
+- **Status**: ✅ **ĐÃ HOÀN THÀNH**
+- **Location**: `server/src/workspaces/workspace-export.service.ts`, `server/src/common/services/pdf-generation.service.ts`, `server/src/workspaces/workspaces.controller.ts`
+- **Đã implement**: 
+  - ✅ Endpoint `/workspaces/:id/export?format=json|pdf` với format parameter
+  - ✅ Export tất cả pages (với blocks), boards (với cards), files trong workspace
+  - ✅ PDF generation service sử dụng @react-pdf/renderer
+  - ✅ File binaries được bao gồm trong JSON export (base64 encoded)
+  - ✅ Permission checks (user phải là workspace member)
+  - ✅ Download file từ MinIO và include trong export
+  - ✅ Swagger documentation với examples
+  - ✅ Comprehensive error handling
 
 ### 18. Workspace Templates
 - **Status**: Chưa có
@@ -408,7 +414,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 5. ✅ Auto-create Page History on Update (#6) - **DONE**
 6. ✅ Realtime Block Updates Integration (#12) - **DONE**
 7. ✅ AI Rate Limiting (#14) - **DONE**
-8. Workspace Export (#17)
+8. ✅ Workspace Export (#17) - **DONE**
 9. ✅ Rate Limiting Applied (#27) - **DONE**
 10. ✅ pgvector Index Creation (#33) - **DONE**
 
@@ -436,18 +442,19 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 3. ✅ **Public Page Frontend Implementation** - Complete UI với SEO, share, embed code
 4. ✅ **Database Migrations** - TypeORM migrations setup với initial schema
 
-### HIGH Priority Tasks (5/6) ✅
+### HIGH Priority Tasks (6/6) ✅
 5. ✅ **Auto-create Page History on Update** - Auto snapshot khi update page
 6. ✅ **Realtime Block Updates Integration** - Debounced auto-save với conflict resolution
 7. ✅ **AI Rate Limiting** - Provider-specific limits với cost tracking
-8. ✅ **Rate Limiting Applied** - Global rate limiting với different limits cho authenticated/public
-9. ✅ **pgvector Index Creation** - pgvector extension và IVFFlat index
+8. ✅ **Workspace Export** - JSON/PDF export với file binaries, permission checks
+9. ✅ **Rate Limiting Applied** - Global rate limiting với different limits cho authenticated/public
+10. ✅ **pgvector Index Creation** - pgvector extension và IVFFlat index
 
 ### Additional Completed Features
 - ✅ **Public Page Embed Code** - Generate và copy embed iframe code
 - ✅ **Page History Auto-creation** - Tự động tạo history khi update
 
-**Tổng kết**: Đã hoàn thành **9/44** chức năng (4/4 CRITICAL, 5/6 HIGH)
+**Tổng kết**: Đã hoàn thành **10/44** chức năng (4/4 CRITICAL, 6/6 HIGH)
 
 ---
 

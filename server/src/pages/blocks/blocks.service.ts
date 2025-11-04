@@ -1,14 +1,18 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject, forwardRef, Optional } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, DataSource } from "typeorm";
 import { Block, BlockType } from "./entities/block.entity";
+import { BlockHistoryService } from "./block-history/block-history.service";
 
 @Injectable()
 export class BlocksService {
   constructor(
     @InjectRepository(Block)
     private blockRepository: Repository<Block>,
-    private dataSource: DataSource
+    private dataSource: DataSource,
+    @Optional()
+    @Inject(forwardRef(() => BlockHistoryService))
+    private blockHistoryService?: BlockHistoryService
   ) {}
 
   async create(createDto: Partial<Block>, pageId: string) {
@@ -30,9 +34,34 @@ export class BlocksService {
     return this.blockRepository.findOne({ where: { id } });
   }
 
-  async update(id: string, updateDto: Partial<Block>) {
+  async update(id: string, updateDto: Partial<Block>, authorId?: string) {
+    // Get current block state before update
+    const currentBlock = await this.findOne(id);
+    if (!currentBlock) {
+      throw new Error("Block not found");
+    }
+
+    // Update block
     await this.blockRepository.update(id, updateDto);
-    return this.findOne(id);
+    const updatedBlock = await this.findOne(id);
+
+    // Auto-create history snapshot if BlockHistoryService is available
+    if (this.blockHistoryService && authorId) {
+      try {
+        const contentSnapshot = {
+          type: currentBlock.type,
+          content: currentBlock.content,
+          orderIndex: currentBlock.orderIndex,
+          parentId: currentBlock.parentId,
+        };
+        await this.blockHistoryService.create(id, contentSnapshot, authorId);
+      } catch (error) {
+        // Log error but don't fail the update
+        console.error("Failed to create block history snapshot:", error);
+      }
+    }
+
+    return updatedBlock;
   }
 
   /**

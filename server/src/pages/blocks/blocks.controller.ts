@@ -21,6 +21,7 @@ import {
 import { BlocksService } from "./blocks.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import { UpdateBlockDto } from "./dto/update-block.dto";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 
 @ApiTags("pages")
 @ApiBearerAuth("JWT-auth")
@@ -57,8 +58,13 @@ export class BlocksController {
   @ApiOperation({ summary: "Cập nhật block" })
   @ApiParam({ name: "id", type: String })
   @ApiResponse({ status: 200, description: "Block đã được cập nhật" })
-  update(@Param("id") id: string, @Body() updateDto: UpdateBlockDto) {
-    return this.blocksService.update(id, updateDto);
+  update(
+    @Param("id") id: string,
+    @Body() updateDto: UpdateBlockDto,
+    @CurrentUser() user: any
+  ) {
+    const authorId = user.userId || user.sub;
+    return this.blocksService.update(id, updateDto, authorId);
   }
 
   @Post("reorder")
