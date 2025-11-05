@@ -2,12 +2,42 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { pagesApi } from "@/lib/api";
-import { Page } from "@/types/page.types";
+import api from "@/lib/api";
 import { PublicPageHeader } from "@/components/shared/PublicPageHeader";
 import { BlockRenderer } from "@/components/shared/BlockRenderer";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 import { AlertCircle } from "lucide-react";
+import type { Block } from "@/types/page.types";
+
+interface Page {
+  id: string;
+  title: string;
+  slug: string;
+  visibility: string;
+  isIndexed: boolean;
+  author: {
+    id: string;
+    username: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  blocks?: Array<{
+    id: string;
+    type: string;
+    content?: {
+      text?: string;
+      url?: string;
+      src?: string;
+      alt?: string;
+      rows?: string[][];
+      items?: Array<{ checked?: boolean; text?: string }>;
+      [key: string]: unknown;
+    };
+    orderIndex?: number;
+    [key: string]: unknown;
+  }>;
+  updatedAt: string;
+}
 
 export default function PublicPage() {
   const params = useParams();
@@ -20,7 +50,10 @@ export default function PublicPage() {
     error,
   } = useQuery<Page>({
     queryKey: ["public-page", slug],
-    queryFn: () => pagesApi.getPublicPage(slug),
+    queryFn: async () => {
+      const response = await api.get(`/pages/public/${slug}`);
+      return response.data;
+    },
     retry: 1,
   });
 
@@ -35,8 +68,11 @@ export default function PublicPage() {
   }
 
   if (isError || !page) {
+    const errorStatus = error && typeof error === "object" && "response" in error
+      ? (error as { response?: { status?: number } }).response?.status
+      : undefined;
     const errorMessage =
-      (error as any)?.response?.status === 404
+      errorStatus === 404
         ? "Trang không tìm thấy"
         : "Đã xảy ra lỗi khi tải trang";
 
@@ -62,7 +98,7 @@ export default function PublicPage() {
         />
         <div className="prose prose-gray dark:prose-invert max-w-none">
           {page.blocks && page.blocks.length > 0 ? (
-            <BlockRenderer blocks={page.blocks} readOnly={true} />
+            <BlockRenderer blocks={page.blocks as unknown as Block[]} readOnly={true} />
           ) : (
             <p className="text-muted-foreground">Trang này chưa có nội dung.</p>
           )}

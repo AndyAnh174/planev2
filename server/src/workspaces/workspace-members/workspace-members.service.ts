@@ -29,11 +29,38 @@ export class WorkspaceMembersService {
     return this.memberRepository.save(member);
   }
 
-  async findAll(workspaceId: string): Promise<WorkspaceMember[]> {
-    return this.memberRepository.find({
-      where: { workspaceId },
-      relations: ["user"],
-    });
+  async findAll(
+    workspaceId: string,
+    search?: string,
+    limit?: number,
+    offset?: number
+  ): Promise<{ members: WorkspaceMember[]; total: number }> {
+    const queryBuilder = this.memberRepository
+      .createQueryBuilder("member")
+      .leftJoinAndSelect("member.user", "user")
+      .where("member.workspaceId = :workspaceId", { workspaceId });
+
+    if (search) {
+      queryBuilder.andWhere(
+        "(user.username ILIKE :search OR user.email ILIKE :search)",
+        { search: `%${search}%` }
+      );
+    }
+
+    const total = await queryBuilder.getCount();
+
+    if (limit !== undefined) {
+      queryBuilder.limit(limit);
+    }
+    if (offset !== undefined) {
+      queryBuilder.offset(offset);
+    }
+
+    queryBuilder.orderBy("member.createdAt", "ASC");
+
+    const members = await queryBuilder.getMany();
+
+    return { members, total };
   }
 
   async findMember(workspaceId: string, userId: string) {

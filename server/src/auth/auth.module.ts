@@ -9,6 +9,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { GitLabStrategy } from "./strategies/gitlab.strategy";
 import { User } from "../users/entities/user.entity";
+import { EmailService } from "../common/services/email.service";
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { User } from "../users/entities/user.entity";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, GitLabStrategy],
+  providers: [AuthService, EmailService, JwtStrategy, LocalStrategy, GitLabStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

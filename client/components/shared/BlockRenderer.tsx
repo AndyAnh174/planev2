@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Block, BlockType } from "@/types/page.types";
 import { cn } from "@/lib/utils";
 
@@ -42,22 +43,27 @@ export function BlockRenderer({ blocks, readOnly = true }: BlockRendererProps) {
         );
 
       case "heading":
-        const level = block.content?.level || 1;
-        const HeadingTag = `h${Math.min(Math.max(level, 1), 6)}` as keyof JSX.IntrinsicElements;
-        return (
-          <HeadingTag
-            key={block.id}
-            className={cn(
-              "mb-4 font-bold",
-              level === 1 && "text-3xl",
-              level === 2 && "text-2xl",
-              level === 3 && "text-xl",
-              depth > 0 && "ml-8"
-            )}
-          >
-            {block.content?.text || ""}
-          </HeadingTag>
+        const level = Number(block.content?.level) || 1;
+        const headingLevel = Math.min(Math.max(level, 1), 6);
+        const headingClass = cn(
+          "mb-4 font-bold",
+          level === 1 && "text-3xl",
+          level === 2 && "text-2xl",
+          level === 3 && "text-xl",
+          depth > 0 && "ml-8"
         );
+        const headingProps = {
+          key: block.id,
+          className: headingClass,
+        };
+        const headingContent = block.content?.text || "";
+        
+        if (headingLevel === 1) return <h1 {...headingProps}>{headingContent}</h1>;
+        if (headingLevel === 2) return <h2 {...headingProps}>{headingContent}</h2>;
+        if (headingLevel === 3) return <h3 {...headingProps}>{headingContent}</h3>;
+        if (headingLevel === 4) return <h4 {...headingProps}>{headingContent}</h4>;
+        if (headingLevel === 5) return <h5 {...headingProps}>{headingContent}</h5>;
+        return <h6 {...headingProps}>{headingContent}</h6>;
 
       case "code":
         return (
@@ -76,7 +82,7 @@ export function BlockRenderer({ blocks, readOnly = true }: BlockRendererProps) {
           <div key={block.id} className={cn("mb-4 overflow-x-auto", depth > 0 && "ml-8")}>
             <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-700">
               <tbody>
-                {rows.map((row: any[], rowIndex: number) => (
+                {rows.map((row: string[], rowIndex: number) => (
                   <tr key={rowIndex}>
                     {row.map((cell: string, cellIndex: number) => (
                       <td
@@ -98,7 +104,7 @@ export function BlockRenderer({ blocks, readOnly = true }: BlockRendererProps) {
         return (
           <div key={block.id} className={cn("mb-4", depth > 0 && "ml-8")}>
             <ul className="list-none space-y-2">
-              {items.map((item: any, index: number) => (
+              {items.map((item: { checked?: boolean; text?: string }, index: number) => (
                 <li key={index} className="flex items-start gap-2">
                   <input
                     type="checkbox"

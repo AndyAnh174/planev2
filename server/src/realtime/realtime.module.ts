@@ -5,12 +5,14 @@ import { RealtimeGateway } from "./realtime.gateway";
 import { PresenceService } from "./presence.service";
 import { BlockUpdateQueueService } from "./block-update-queue.service";
 import { PagesModule } from "../pages/pages.module";
+import { UsersModule } from "../users/users.module";
 
 @Module({
   imports: [
     ConfigModule,
     JwtModule,
     forwardRef(() => PagesModule),
+    forwardRef(() => UsersModule),
   ],
   providers: [RealtimeGateway, PresenceService, BlockUpdateQueueService],
   exports: [RealtimeGateway, PresenceService, BlockUpdateQueueService],

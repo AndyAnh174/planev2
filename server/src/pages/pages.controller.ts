@@ -21,6 +21,7 @@ import { Public } from "../auth/decorators/public.decorator";
 import { CreatePageDto } from "./dto/create-page.dto";
 import { UpdatePageDto } from "./dto/update-page.dto";
 import { PublishPageDto } from "./dto/publish-page.dto";
+import { UpdateSeoDto } from "./dto/update-seo.dto";
 
 @ApiTags("pages")
 @ApiBearerAuth("JWT-auth")
@@ -79,8 +80,8 @@ export class PagesController {
   @ApiOperation({ summary: "Publish page thành công khai" })
   @ApiParam({ name: "id", type: String })
   @ApiResponse({ status: 200, description: "Page đã được publish" })
-  publish(@Param("id") id: string, @Body() body: PublishPageDto) {
-    return this.pagesService.publish(id, body.slug);
+  publish(@Param("id") id: string, @Body() body: PublishPageDto & { isIndexed?: boolean }) {
+    return this.pagesService.publish(id, body.slug, body.isIndexed || false);
   }
 
   @Delete(":id/publish")
@@ -258,6 +259,14 @@ export class PagesController {
       }
       throw error;
     }
+  }
+
+  @Patch(":id/seo")
+  @ApiOperation({ summary: "Update SEO settings cho page" })
+  @ApiParam({ name: "id", type: String })
+  @ApiResponse({ status: 200, description: "SEO settings đã được cập nhật" })
+  updateSeo(@Param("id") id: string, @Body() body: UpdateSeoDto) {
+    return this.pagesService.updateSeo(id, body.isIndexed || false);
   }
 
   @Public()

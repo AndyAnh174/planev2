@@ -107,7 +107,7 @@ export class PagesService {
     return updatedPage;
   }
 
-  async publish(id: string, slug?: string) {
+  async publish(id: string, slug?: string, isIndexed: boolean = false) {
     const page = await this.findOne(id);
     if (!page) throw new Error("Page not found");
     
@@ -115,12 +115,29 @@ export class PagesService {
     return this.update(id, {
       visibility: "public" as PageVisibility,
       slug: updatedSlug,
+      isIndexed,
     });
   }
 
   async unpublish(id: string) {
     return this.update(id, {
       visibility: "private" as PageVisibility,
+      isIndexed: false,
+    });
+  }
+
+  async updateSeo(id: string, isIndexed: boolean) {
+    return this.update(id, { isIndexed });
+  }
+
+  async findIndexedPages(): Promise<Page[]> {
+    return this.pageRepository.find({
+      where: {
+        visibility: "public",
+        isIndexed: true,
+      },
+      relations: ["author"],
+      order: { updatedAt: "DESC" },
     });
   }
 

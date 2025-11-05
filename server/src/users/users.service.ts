@@ -10,8 +10,28 @@ export class UsersService {
     private usersRepository: Repository<User>
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+  async findAll(search?: string, limit?: number, offset?: number): Promise<{ users: User[]; total: number }> {
+    const queryBuilder = this.usersRepository.createQueryBuilder("user");
+
+    if (search) {
+      queryBuilder.where(
+        "(user.username ILIKE :search OR user.email ILIKE :search)",
+        { search: `%${search}%` }
+      );
+    }
+
+    const total = await queryBuilder.getCount();
+
+    if (limit !== undefined) {
+      queryBuilder.limit(limit);
+    }
+    if (offset !== undefined) {
+      queryBuilder.offset(offset);
+    }
+
+    const users = await queryBuilder.getMany();
+
+    return { users, total };
   }
 
   async findOne(id: string): Promise<User | null> {

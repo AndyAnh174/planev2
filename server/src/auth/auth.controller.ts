@@ -14,6 +14,8 @@ import type { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { Public } from "./decorators/public.decorator";
 import { CurrentUser } from "./decorators/current-user.decorator";
 
@@ -104,6 +106,31 @@ export class AuthController {
     const userId = user.userId || user.sub;
     await this.authService.logout(userId);
     return { message: "Đăng xuất thành công" };
+  }
+
+  @Public()
+  @Post("forgot-password")
+  @ApiOperation({ summary: "Yêu cầu reset password" })
+  @ApiResponse({ status: 200, description: "Email reset password đã được gửi (nếu email tồn tại)" })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(forgotPasswordDto.email);
+    // Always return success to prevent email enumeration
+    return {
+      message: "Nếu email tồn tại, chúng tôi đã gửi link reset password đến email của bạn.",
+    };
+  }
+
+  @Public()
+  @Post("reset-password")
+  @ApiOperation({ summary: "Reset password với token" })
+  @ApiResponse({ status: 200, description: "Password đã được reset thành công" })
+  @ApiResponse({ status: 400, description: "Token không hợp lệ hoặc đã hết hạn" })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.authService.resetPassword(
+      resetPasswordDto.token,
+      resetPasswordDto.password
+    );
+    return { message: "Password đã được reset thành công. Vui lòng đăng nhập lại." };
   }
 }
 

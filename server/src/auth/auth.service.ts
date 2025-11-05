@@ -2,6 +2,8 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  NotFoundException,
+  BadRequestException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -12,6 +14,7 @@ import Redis from "ioredis";
 import { User } from "../users/entities/user.entity";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { EmailService } from "../common/services/email.service";
 
 @Injectable()
 export class AuthService {
@@ -21,7 +24,8 @@ export class AuthService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private emailService: EmailService
   ) {
     const redisConfig = this.configService.get("redis") || {};
     const redisUrl = redisConfig.url || process.env.REDIS_URL;
@@ -171,6 +175,80 @@ export class AuthService {
   async logout(userId: string): Promise<void> {
     // Invalidate refresh token trong Redis
     await this.redis.del(`refresh:${userId}`);
+  }
+
+  /**
+   * Request password reset - send reset token via email
+   */
+  async forgotPassword(email: string): Promise<void> {
+    // Find user by email
+    const user = await this.usersRepository.findOne({ where: { email } });
+    
+    // Don't reveal if user exists or not (security best practice)
+    if (!user || !user.passwordHash) {
+      // Return success even if user doesn't exist to prevent email enumeration
+      return;
+    }
+
+    // Generate reset token (JWT with short expiration - 15 minutes)
+    const resetPayload = { sub: user.id, email: user.email, type: "password-reset" };
+    const resetToken = this.jwtService.sign(resetPayload, {
+      expiresIn: "15m",
+    });
+
+    // Store token in Redis with TTL 15 minutes
+    const ttlSeconds = 15 * 60; // 15 minutes in seconds
+    await this.redis.setex(`password-reset:${user.id}`, ttlSeconds, resetToken);
+
+    // Send email with reset link
+    await this.emailService.sendPasswordResetEmail(email, resetToken);
+  }
+
+  /**
+   * Reset password using token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    try {
+      // Verify token
+      const payload = this.jwtService.verify(token);
+      
+      // Check token type
+      if (payload.type !== "password-reset") {
+        throw new BadRequestException("Invalid token type");
+      }
+
+      const userId = payload.sub;
+
+      // Check token exists in Redis
+      const storedToken = await this.redis.get(`password-reset:${userId}`);
+      if (!storedToken || storedToken !== token) {
+        throw new BadRequestException("Reset token không hợp lệ hoặc đã hết hạn");
+      }
+
+      // Get user
+      const user = await this.usersRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException("User không tồn tại");
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update user password
+      await this.usersRepository.update(userId, { passwordHash: hashedPassword });
+
+      // Invalidate token
+      await this.redis.del(`password-reset:${userId}`);
+
+      // Also invalidate all refresh tokens for security (user should re-login)
+      await this.redis.del(`refresh:${userId}`);
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      // JWT verification errors
+      throw new BadRequestException("Reset token không hợp lệ hoặc đã hết hạn");
+    }
   }
 }
 

@@ -16,6 +16,8 @@ import { RealtimeModule } from "./realtime/realtime.module";
 import { SearchModule } from "./search/search.module";
 import { HealthModule } from "./health/health.module";
 import { RateLimitInterceptor } from "./common/interceptors/rate-limit.interceptor";
+import { SitemapController } from "./common/controllers/sitemap.controller";
+import { SitemapService } from "./common/services/sitemap.service";
 
 @Module({
   imports: [
@@ -33,9 +35,10 @@ import { RateLimitInterceptor } from "./common/interceptors/rate-limit.intercept
     SearchModule,
     HealthModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, SitemapController],
   providers: [
     AppService,
+    SitemapService,
     {
       provide: APP_INTERCEPTOR,
       useClass: RateLimitInterceptor,

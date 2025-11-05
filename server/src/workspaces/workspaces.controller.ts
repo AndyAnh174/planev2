@@ -21,7 +21,7 @@ import {
   ApiParam,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import type { Response } from "express";
 import { WorkspacesService } from "./workspaces.service";
 import { WorkspaceExportService } from "./workspace-export.service";
 import { PDFGenerationService } from "../common/services/pdf-generation.service";

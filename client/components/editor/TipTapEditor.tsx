@@ -5,6 +5,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
+import { useEffect, useRef } from "react";
+import { getSocket } from "@/hooks/useSocket";
 
 interface TipTapEditorProps {
   pageId: string;
@@ -19,11 +21,12 @@ export function TipTapEditor({
   onChange,
   readOnly = false,
 }: TipTapEditorProps) {
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable some features in read-only mode
-        history: !readOnly,
+        // History is enabled by default in StarterKit
       }),
       Placeholder.configure({
         placeholder: readOnly ? "" : "Bắt đầu viết... Nhấn / để xem các lệnh",
@@ -48,6 +51,40 @@ export function TipTapEditor({
       }
     },
   });
+
+  // Handle typing indicators
+  useEffect(() => {
+    if (!editor || readOnly) return;
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      // Emit typing start
+      socket.emit("typing:start", { pageId });
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Emit typing stop after 2 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("typing:stop", { pageId });
+      }, 2000);
+    };
+
+    editor.on("update", handleUpdate);
+
+    return () => {
+      editor.off("update", handleUpdate);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      // Emit typing stop on cleanup
+      socket.emit("typing:stop", { pageId });
+    };
+  }, [editor, pageId, readOnly]);
 
   if (!editor) {
     return (

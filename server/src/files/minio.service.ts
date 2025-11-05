@@ -63,13 +63,10 @@ export class MinIOService {
   async downloadFile(fileName: string): Promise<Buffer> {
     const chunks: Buffer[] = [];
 
-    return new Promise((resolve, reject) => {
-      this.client.getObject(this.bucket, fileName, (err, dataStream) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
+    return new Promise(async (resolve, reject) => {
+      try {
+        const dataStream = await this.client.getObject(this.bucket, fileName);
+        
         dataStream.on("data", (chunk) => {
           chunks.push(chunk);
         });
@@ -81,7 +78,9 @@ export class MinIOService {
         dataStream.on("error", (error) => {
           reject(error);
         });
-      });
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 }

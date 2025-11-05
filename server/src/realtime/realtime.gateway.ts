@@ -76,13 +76,16 @@ export class RealtimeGateway
 
     const userId = client.data.user.userId || client.data.user.sub;
     await client.join(`page:${data.pageId}`);
-    await this.presenceService.addUserToPage(userId, data.pageId);
+    const userPresence = await this.presenceService.addUserToPage(userId, data.pageId);
 
-    const users = await this.presenceService.getUsersOnPage(data.pageId);
-    this.server.to(`page:${data.pageId}`).emit("user:joined", {
-      userId,
-      users,
-    });
+    if (userPresence) {
+      const users = await this.presenceService.getUsersOnPage(data.pageId);
+      this.server.to(`page:${data.pageId}`).emit("user:joined", {
+        userId,
+        user: userPresence,
+        users,
+      });
+    }
   }
 
   @SubscribeMessage("page:leave")
@@ -96,8 +99,10 @@ export class RealtimeGateway
     await client.leave(`page:${data.pageId}`);
     await this.presenceService.removeUserFromPage(userId, data.pageId);
 
+    const users = await this.presenceService.getUsersOnPage(data.pageId);
     this.server.to(`page:${data.pageId}`).emit("user:left", {
       userId,
+      users,
     });
   }
 
@@ -186,6 +191,40 @@ export class RealtimeGateway
     client.to(`page:${data.pageId}`).emit("cursor:moved", {
       userId,
       position: data.position,
+    });
+  }
+
+  @SubscribeMessage("typing:start")
+  async handleTypingStart(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { pageId: string }
+  ) {
+    if (!client.data.user) return;
+
+    const userId = client.data.user.userId || client.data.user.sub;
+    await this.presenceService.setUserTyping(userId, data.pageId, true);
+    
+    const users = await this.presenceService.getUsersOnPage(data.pageId);
+    client.to(`page:${data.pageId}`).emit("user:typing", {
+      userId,
+      users: users.filter(u => u.isTyping),
+    });
+  }
+
+  @SubscribeMessage("typing:stop")
+  async handleTypingStop(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { pageId: string }
+  ) {
+    if (!client.data.user) return;
+
+    const userId = client.data.user.userId || client.data.user.sub;
+    await this.presenceService.setUserTyping(userId, data.pageId, false);
+    
+    const users = await this.presenceService.getUsersOnPage(data.pageId);
+    client.to(`page:${data.pageId}`).emit("user:typing", {
+      userId,
+      users: users.filter(u => u.isTyping),
     });
   }
 }

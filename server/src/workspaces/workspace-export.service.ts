@@ -93,7 +93,8 @@ export class WorkspaceExportService {
       throw new NotFoundException("Workspace not found");
     }
 
-    const members = await this.workspaceMembersService.findAll(workspaceId);
+    const membersData = await this.workspaceMembersService.findAll(workspaceId);
+    const members = membersData.members || [];
 
     return {
       id: workspace.id,

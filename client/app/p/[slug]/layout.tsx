@@ -1,90 +1,99 @@
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-type Props = {
-  params: { slug: string };
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+async function getPageData(slug: string) {
   try {
-    // Fetch page data directly (server-side)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    const response = await fetch(`${apiUrl}/pages/public/${params.slug}`, {
-      cache: "no-store",
+    const res = await fetch(`${API_URL}/pages/public/${slug}`, {
+      next: { revalidate: 3600 }, // Revalidate every hour
     });
 
-    if (!response.ok) {
-      return {
-        title: "Public Page",
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
+    if (!res.ok) {
+      return null;
     }
 
-    const page = await response.json();
-
-    if (!page || !page.isIndexed) {
-      return {
-        title: page?.title || "Public Page",
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
-    }
-
-    // Extract description from first text block
-    const firstTextBlock = page.blocks?.find(
-      (block: any) => block.type === "text" || block.type === "heading"
-    );
-    const description =
-      firstTextBlock?.content?.text ||
-      (firstTextBlock?.content?.html
-        ? firstTextBlock.content.html.replace(/<[^>]*>/g, "").slice(0, 160)
-        : "") ||
-      page.title;
-
-    const pageUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/p/${page.slug}`;
-
-    return {
-      title: page.title,
-      description: description.substring(0, 160),
-      openGraph: {
-        title: page.title,
-        description: description.substring(0, 160),
-        url: pageUrl,
-        type: "article",
-        publishedTime: page.createdAt,
-        modifiedTime: page.updatedAt,
-        authors: page.author?.username ? [page.author.username] : undefined,
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: page.title,
-        description: description.substring(0, 160),
-      },
-      robots: {
-        index: true,
-        follow: true,
-      },
-    };
-  } catch (error) {
-    return {
-      title: "Public Page",
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+    return res.json();
+  } catch {
+    return null;
   }
 }
 
-export default function PublicPageLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const page = await getPageData(slug);
+
+  if (!page) {
+    return {
+      title: "Page Not Found",
+    };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const pageUrl = `${baseUrl}/p/${page.slug}`;
+  interface Block {
+    type: string;
+    content?: {
+      text?: string;
+    };
+  }
+  
+  const description = page.blocks
+    ?.map((block: Block) => {
+      if (block.type === "text" || block.type === "heading") {
+        return block.content?.text || "";
+      }
+      return "";
+    })
+    .join(" ")
+    .substring(0, 160) || `View ${page.title} on PlaneV2.0`;
+
+  return {
+    title: page.title,
+    description,
+    openGraph: {
+      title: page.title,
+      description,
+      url: pageUrl,
+      siteName: "PlaneV2.0",
+      type: "article",
+      ...(page.author && {
+        authors: [page.author.username || page.author.email],
+      }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: page.title,
+      description,
+    },
+    alternates: {
+      canonical: pageUrl,
+    },
+    robots: page.isIndexed
+      ? {
+          index: true,
+          follow: true,
+        }
+      : {
+          index: false,
+          follow: false,
+        },
+  };
 }
 
+export default async function PublicPageLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const page = await getPageData(slug);
+
+  if (!page) {
+    notFound();
+  }
+
+  return <>{children}</>;
+}

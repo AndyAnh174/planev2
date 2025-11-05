@@ -57,11 +57,20 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - ✅ Tự động tạo page history snapshot mỗi khi page được update
   - ⚠️ Cleanup old versions (90 days) - có service nhưng chưa có scheduled job (cần implement sau)
 
-### 7. Block History API
-- **Status**: Entity đã có nhưng chưa có service/controller
-- **Cần**: 
-  - Block history service
-  - API endpoints tương tự page history
+### 7. Block History API ✅ **DONE**
+- **Status**: ✅ **ĐÃ HOÀN THÀNH**
+- **Location**: `server/src/pages/blocks/block-history/block-history.service.ts`, `server/src/pages/blocks/block-history/block-history.controller.ts`, `server/src/pages/blocks/blocks.service.ts`
+- **Đã implement**: 
+  - ✅ BlockHistoryService với CRUD operations và version management
+  - ✅ API endpoints tương tự page history:
+    - ✅ `GET /blocks/:blockId/history` - List block versions với pagination
+    - ✅ `GET /blocks/:blockId/history/:versionId` - Get specific version details
+    - ✅ `POST /blocks/:blockId/history/:versionId/restore` - Restore block to previous version
+    - ✅ `GET /blocks/:blockId/history/compare?version1=:v1&version2=:v2` - Compare two versions
+  - ✅ Auto-create block history snapshot khi block được update
+  - ✅ Permission checks (user phải có access đến page chứa block)
+  - ✅ Swagger documentation với examples
+  - ✅ Comprehensive error handling
 
 ### 8. Page History Timeline UI
 - **Status**: Chưa có frontend
@@ -123,11 +132,35 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - Cursor tracking UI (nếu cần)
   - "User is typing..." indicator
 
+### 14. Real-time Cursor Tracking
+- **Status**: Chưa có
+- **Cần**: 
+  - Broadcast cursor position khi user đang edit
+  - Hiển thị cursor của các users khác với màu khác nhau
+  - Real-time cursor updates qua Socket.IO
+  - Smooth cursor animation
+
+### 15. Collaborative Editing Conflict Resolution UI
+- **Status**: Backend có nhưng chưa có UI feedback
+- **Cần**: 
+  - Hiển thị conflict warnings khi có multiple edits
+  - UI để user chọn version nào giữ lại
+  - Notification khi có conflict được resolve
+  - Visual indicator cho conflicting blocks
+
+### 16. Real-time User Activity Feed
+- **Status**: Chưa có
+- **Cần**: 
+  - Activity feed hiển thị actions của users trong workspace
+  - "User X edited page Y" notifications
+  - Activity timeline
+  - Filter by user/action type
+
 ---
 
 ## 🤖 AI Integration
 
-### 14. AI Rate Limiting ⚠️ **QUAN TRỌNG** ✅ **DONE**
+### 17. AI Rate Limiting ⚠️ **QUAN TRỌNG** ✅ **DONE**
 - **Status**: ✅ **ĐÃ HOÀN THÀNH**
 - **Location**: `server/src/common/interceptors/ai-rate-limit.interceptor.ts`, `server/src/common/decorators/ai-rate-limit.decorator.ts`, `server/src/ai/ai.controller.ts`, `server/src/ai/gemini/gemini.service.ts`
 - **Đã implement**: 
@@ -138,13 +171,13 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - ✅ Usage stats tracking trong Redis
   - ✅ Configurable via environment variables
 
-### 15. AI Slash Commands trong Editor
+### 18. AI Slash Commands trong Editor
 - **Status**: Chưa có
 - **Cần**: 
   - TipTap extension cho `/ai-summarize`, `/ai-translate`, `/ai-brainstorm`
   - UI để nhập và hiển thị kết quả
 
-### 16. RAG Embedding Auto-generation
+### 19. RAG Embedding Auto-generation
 - **Status**: Embedding service đã có nhưng chưa tự động chạy
 - **Cần**: 
   - Tự động generate embedding khi block được tạo/cập nhật
@@ -154,7 +187,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 📊 Workspace Management
 
-### 17. Workspace Export (JSON/PDF) ⚠️ **QUAN TRỌNG** ✅ **DONE**
+### 20. Workspace Export (JSON/PDF) ⚠️ **QUAN TRỌNG** ✅ **DONE**
 - **Status**: ✅ **ĐÃ HOÀN THÀNH**
 - **Location**: `server/src/workspaces/workspace-export.service.ts`, `server/src/common/services/pdf-generation.service.ts`, `server/src/workspaces/workspaces.controller.ts`
 - **Đã implement**: 
@@ -167,7 +200,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - ✅ Swagger documentation với examples
   - ✅ Comprehensive error handling
 
-### 18. Workspace Templates
+### 21. Workspace Templates
 - **Status**: Chưa có
 - **Cần**: 
   - Template system
@@ -177,14 +210,14 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 🔍 Search
 
-### 19. Search Frontend
+### 22. Search Frontend
 - **Status**: Backend có nhưng chưa check frontend
 - **Cần**: 
   - Search bar component
   - Search results UI
   - Filter by workspace, type (page/board)
 
-### 20. Semantic Search UI
+### 23. Semantic Search UI
 - **Status**: Backend có nhưng chưa check frontend
 - **Cần**: 
   - UI để hiển thị semantic search results
@@ -194,7 +227,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 📁 Files & Storage
 
-### 21. File Preview
+### 24. File Preview
 - **Status**: Chưa có
 - **Cần**: 
   - Image preview
@@ -202,7 +235,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - Video preview
   - Document preview (Office files)
 
-### 22. File Size Limits
+### 25. File Size Limits
 - **Status**: Chưa có validation
 - **Cần**: 
   - Config max file size
@@ -213,7 +246,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 💬 Comments
 
-### 23. Comments UI
+### 26. Comments UI
 - **Status**: Backend có nhưng chưa check frontend
 - **Cần**: 
   - Comment component trên pages/blocks/cards
@@ -223,22 +256,82 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ---
 
+## 👥 User Management
+
+### 45. User Management UI
+- **Status**: Chưa có
+- **Cần**: 
+  - User list/directory trong workspace
+  - User profile pages
+  - User search và filter
+  - User status (active, inactive, pending)
+  - User avatar và bio display
+
+### 46. Invite Users to Workspace
+- **Status**: Backend có nhưng chưa check frontend
+- **Cần**: 
+  - Invite dialog/form
+  - Email invitation với invite link
+  - Invite by email address
+  - Invite by username (nếu user đã có account)
+  - Invite token với expiration
+  - Accept/reject invitation flow
+
+### 47. User Profile Management
+- **Status**: Chưa có
+- **Cần**: 
+  - Edit profile page (username, email, avatar, bio)
+  - Upload/change avatar
+  - Update preferences
+  - Change password
+  - Account settings
+  - Connected accounts (GitLab OAuth)
+
+### 48. User Activity & Audit Log
+- **Status**: Chưa có
+- **Cần**: 
+  - Track user actions (create, update, delete)
+  - Audit log trong workspace
+  - Activity history per user
+  - Export audit logs
+  - Filter by user/action/date
+
+### 49. User Permissions Management
+- **Status**: Backend có RBAC nhưng cần UI
+- **Cần**: 
+  - UI để assign roles (owner, admin, member, viewer)
+  - Change user role trong workspace
+  - Permission matrix view
+  - Bulk role assignment
+  - Permission inheritance
+
+### 50. User Onboarding & Getting Started
+- **Status**: Chưa có
+- **Cần**: 
+  - Welcome tour cho new users
+  - Getting started guide
+  - Interactive tutorials
+  - Tips và tooltips
+  - Progress tracking
+
+---
+
 ## 📈 Analytics & Monitoring
 
-### 24. Health Checks Implementation
+### 27. Health Checks Implementation
 - **Status**: Controller đã có nhưng cần check logic
 - **Cần**: 
   - `/health/ready` - Check database, Redis, MinIO connections
   - `/health/live` - Basic liveness check
   - Metrics endpoint `/metrics` (Prometheus format)
 
-### 25. Error Tracking (Sentry)
+### 28. Error Tracking (Sentry)
 - **Status**: Chưa có
 - **Cần**: 
   - Integrate Sentry hoặc Rollbar
   - Error logging và alerting
 
-### 26. APM (Application Performance Monitoring)
+### 29. APM (Application Performance Monitoring)
 - **Status**: Chưa có
 - **Cần**: 
   - OpenTelemetry setup
@@ -249,7 +342,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 🔒 Security & Performance
 
-### 27. Rate Limiting Applied ✅ **DONE**
+### 30. Rate Limiting Applied ✅ **DONE**
 - **Status**: ✅ **ĐÃ HOÀN THÀNH**
 - **Location**: `server/src/common/interceptors/rate-limit.interceptor.ts`, `server/src/common/decorators/skip-rate-limit.decorator.ts`, `server/src/app.module.ts`
 - **Đã implement**: 
@@ -260,25 +353,25 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - ✅ Health check endpoints được exempt từ rate limiting
   - ✅ Configurable via environment variables
 
-### 28. CORS Configuration
+### 31. CORS Configuration
 - **Status**: Cần check cấu hình
 - **Cần**: 
   - Whitelist domains
   - Proper CORS headers
 
-### 29. CSRF Protection
+### 32. CSRF Protection
 - **Status**: Chưa có
 - **Cần**: 
   - CSRF tokens
   - Validate CSRF cho state-changing operations
 
-### 30. SQL Injection Prevention
+### 33. SQL Injection Prevention
 - **Status**: TypeORM đã có parameterized queries nhưng cần audit
 - **Cần**: 
   - Audit tất cả queries
   - Ensure no raw SQL với user input
 
-### 31. XSS Prevention
+### 34. XSS Prevention
 - **Status**: Cần check
 - **Cần**: 
   - Sanitize user input
@@ -289,7 +382,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 🗄️ Database & Migrations
 
-### 32. Database Migrations ✅ **DONE**
+### 35. Database Migrations ✅ **DONE**
 - **Status**: ✅ **ĐÃ HOÀN THÀNH**
 - **Location**: `server/src/database/data-source.ts`, `server/src/database/migrations/`
 - **Đã implement**: 
@@ -298,7 +391,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - ✅ Migration scripts trong package.json (generate, create, run, revert, show)
   - ✅ Documentation trong migrations/README.md
 
-### 33. pgvector Index Creation ✅ **DONE**
+### 36. pgvector Index Creation ✅ **DONE**
 - **Status**: ✅ **ĐÃ HOÀN THÀNH**
 - **Location**: `server/src/database/migrations/1699123456790-EnablePgvector.ts`, `server/src/database/migrations/1699123456791-CreateEmbeddingsIndex.ts`
 - **Đã implement**: 
@@ -310,13 +403,13 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 🎨 Frontend Features
 
-### 34. Dark Mode Toggle
+### 37. Dark Mode Toggle
 - **Status**: Package `next-themes` đã có nhưng cần check UI
 - **Cần**: 
   - Theme toggle button trong header
   - Persist theme preference
 
-### 35. Keyboard Shortcuts
+### 38. Keyboard Shortcuts
 - **Status**: Chưa có
 - **Cần**: 
   - `Cmd/Ctrl + K`: Command palette
@@ -324,14 +417,14 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - `Cmd/Ctrl + B`: Toggle sidebar
   - Shortcut help modal
 
-### 36. Command Palette
+### 39. Command Palette
 - **Status**: Chưa có
 - **Cần**: 
   - Search pages, boards
   - Quick actions (new page, new board)
   - Navigation
 
-### 37. Mobile Responsive
+### 40. Mobile Responsive
 - **Status**: Cần test
 - **Cần**: 
   - Mobile-friendly layout
@@ -342,14 +435,14 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 📦 Deployment & DevOps
 
-### 38. Docker Compose Production Setup
+### 41. Docker Compose Production Setup
 - **Status**: Có docker-compose.yml nhưng cần check production config
 - **Cần**: 
   - Production-ready docker-compose
   - Environment variables
   - Health checks trong docker-compose
 
-### 39. Automated Backups
+### 42. Automated Backups
 - **Status**: Chưa có
 - **Cần**: 
   - Daily PostgreSQL backup script
@@ -357,7 +450,7 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
   - Redis backup
   - Backup retention policy
 
-### 40. CI/CD Pipeline
+### 43. CI/CD Pipeline
 - **Status**: Chưa có
 - **Cần**: 
   - Automated tests
@@ -368,14 +461,14 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 📝 Documentation
 
-### 41. API Documentation (Swagger)
+### 44. API Documentation (Swagger)
 - **Status**: Swagger đã setup nhưng cần check completeness
 - **Cần**: 
   - Tất cả endpoints đều có Swagger docs
   - Example requests/responses
   - Authentication flow docs
 
-### 42. User Documentation
+### 51. User Documentation
 - **Status**: Chưa có
 - **Cần**: 
   - User guide
@@ -386,14 +479,14 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 
 ## 🧪 Testing
 
-### 43. Unit Tests
+### 52. Unit Tests
 - **Status**: Chưa có hoặc ít
 - **Cần**: 
   - Test cho services
   - Test cho controllers
   - Test coverage > 70%
 
-### 44. E2E Tests
+### 53. E2E Tests
 - **Status**: Có structure nhưng chưa có tests
 - **Cần**: 
   - Test user flows (login, create page, edit)
@@ -413,24 +506,34 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 ### 🟡 **HIGH** (Quan trọng):
 5. ✅ Auto-create Page History on Update (#6) - **DONE**
 6. ✅ Realtime Block Updates Integration (#12) - **DONE**
-7. ✅ AI Rate Limiting (#14) - **DONE**
-8. ✅ Workspace Export (#17) - **DONE**
-9. ✅ Rate Limiting Applied (#27) - **DONE**
-10. ✅ pgvector Index Creation (#33) - **DONE**
+7. ✅ AI Rate Limiting (#17) - **DONE**
+8. ✅ Workspace Export (#20) - **DONE**
+9. ✅ Rate Limiting Applied (#30) - **DONE**
+10. ✅ pgvector Index Creation (#36) - **DONE**
 
 ### 🟢 **MEDIUM** (Có thể làm sau):
 11. Password Reset (#2)
-12. Block History API (#7)
+12. ✅ Block History API (#7) - **DONE**
 13. Public Page SEO (#10)
-14. File Preview (#21)
-15. Comments UI (#23)
-16. Command Palette (#36)
+14. File Preview (#24)
+15. Comments UI (#26)
+16. Command Palette (#39)
+17. Presence Indicator Frontend (#13)
+18. User Management UI (#45)
+19. Invite Users to Workspace (#46)
+20. User Profile Management (#47)
+21. Real-time Cursor Tracking (#14)
+22. Collaborative Editing Conflict Resolution UI (#15)
 
 ### ⚪ **LOW** (Nice to have):
-17. Email Verification (#3)
-18. Workspace Templates (#18)
-19. APM (#26)
-20. User Documentation (#42)
+23. Email Verification (#3)
+24. Workspace Templates (#21)
+25. APM (#29)
+26. User Documentation (#51)
+27. Real-time User Activity Feed (#16)
+28. User Activity & Audit Log (#48)
+29. User Permissions Management (#49)
+30. User Onboarding & Getting Started (#50)
 
 ---
 
@@ -453,8 +556,9 @@ Dựa trên documentation và code hiện tại, đây là danh sách các chứ
 ### Additional Completed Features
 - ✅ **Public Page Embed Code** - Generate và copy embed iframe code
 - ✅ **Page History Auto-creation** - Tự động tạo history khi update
+- ✅ **Block History API** - Full CRUD với permission checks, auto-history creation
 
-**Tổng kết**: Đã hoàn thành **10/44** chức năng (4/4 CRITICAL, 6/6 HIGH)
+**Tổng kết**: Đã hoàn thành **11/53** chức năng (4/4 CRITICAL, 6/6 HIGH, 1/22 MEDIUM)
 
 ---
 
